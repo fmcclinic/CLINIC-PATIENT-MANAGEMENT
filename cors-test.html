@@ -48,7 +48,9 @@
         <button id="btnFetch" class="btn">Thử fetch API thông thường</button>
         <button id="btnNoCors" class="btn">Thử fetch với mode: 'no-cors'</button>
         <button id="btnJsonp" class="btn">Thử dùng JSONP</button>
-        <button id="btnProxy" class="btn">Thử dùng CORS Proxy</button>
+        <button id="btnProxy1" class="btn">Thử AllOrigins Proxy</button>
+        <button id="btnProxy2" class="btn">Thử CORS.sh Proxy</button>
+        <button id="btnProxy3" class="btn">Thử CORSProxy.io</button>
     </div>
     
     <h3>Kết quả:</h3>
@@ -139,10 +141,54 @@
             log("Script JSONP đã được thêm vào DOM");
         });
         
-        // Phương thức 4: CORS Proxy
-        document.getElementById('btnProxy').addEventListener('click', function() {
+        // Phương thức 4: AllOrigins CORS Proxy
+        document.getElementById('btnProxy1').addEventListener('click', function() {
             clearOutput();
-            log("Đang gọi API thông qua CORS Proxy...");
+            log("Đang gọi API thông qua AllOrigins CORS Proxy...");
+            
+            const PROXY_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(API_URL)}?action=getAllPatients`;
+            
+            fetch(PROXY_URL)
+                .then(response => {
+                    log(`Nhận được phản hồi với status: ${response.status} ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    log(`Dữ liệu nhận được: ${JSON.stringify(data, null, 2)}`);
+                })
+                .catch(error => {
+                    log(`Lỗi: ${error.message}`, true);
+                });
+        });
+        
+        // Phương thức 5: CORS.sh Proxy
+        document.getElementById('btnProxy2').addEventListener('click', function() {
+            clearOutput();
+            log("Đang gọi API thông qua CORS.sh Proxy...");
+            
+            const PROXY_URL = `https://cors.sh/${API_URL}?action=getAllPatients`;
+            
+            fetch(PROXY_URL, {
+                headers: {
+                    'x-cors-api-key': 'temporary-demo-key'
+                }
+            })
+                .then(response => {
+                    log(`Nhận được phản hồi với status: ${response.status} ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    log(`Dữ liệu nhận được: ${JSON.stringify(data, null, 2)}`);
+                })
+                .catch(error => {
+                    log(`Lỗi: ${error.message}`, true);
+                });
+        });
+        
+        // Phương thức 6: CORSProxy.io
+        document.getElementById('btnProxy3').addEventListener('click', function() {
+            clearOutput();
+            log("Đang gọi API thông qua CORSProxy.io...");
             
             const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(API_URL)}?action=getAllPatients`;
             
