@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra CORS với Google Apps Script</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .btn {
+            padding: 10px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background-color: #3367d6;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kiểm tra CORS với Google Apps Script</h1>
+    
+    <div>
+        <button id="btnFetch" class="btn">Thử fetch API thông thường</button>
+        <button id="btnNoCors" class="btn">Thử fetch với mode: 'no-cors'</button>
+        <button id="btnJsonp" class="btn">Thử dùng JSONP</button>
+        <button id="btnProxy" class="btn">Thử dùng CORS Proxy</button>
+    </div>
+    
+    <h3>Kết quả:</h3>
+    <div id="output">Kết quả sẽ hiển thị ở đây...</div>
+    
+    <script>
+        // URL của Google Apps Script API của bạn
+        const API_URL = "https://script.google.com/macros/s/AKfycbx-TQojT-M16MZy50zy1lZzU5_QPPV1rilGM6DeH1r39FmWxHJJGr-RlpB2r-4ZMaKI/exec";
+        
+        // Phần tử đầu ra để hiển thị kết quả
+        const output = document.getElementById('output');
+        
+        // Hàm hiển thị thông báo
+        function log(message, isError = false) {
+            const className = isError ? 'error' : 'success';
+            output.innerHTML += `<div class="${className}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+        }
+        
+        // Xóa kết quả trước đó
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+        
+        // Phương thức 1: Fetch thông thường
+        document.getElementById('btnFetch').addEventListener('click', function() {
+            clearOutput();
+            log("Đang gọi API với fetch thông thường...");
+            
+            fetch(`${API_URL}?action=getAllPatients`)
+                .then(response => {
+                    log(`Nhận được phản hồi với status: ${response.status} ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    log(`Dữ liệu nhận được: ${JSON.stringify(data, null, 2)}`);
+                })
+                .catch(error => {
+                    log(`Lỗi: ${error.message}`, true);
+                });
+        });
+        
+        // Phương thức 2: Fetch với mode no-cors
+        document.getElementById('btnNoCors').addEventListener('click', function() {
+            clearOutput();
+            log("Đang gọi API với fetch mode no-cors...");
+            
+            fetch(`${API_URL}?action=getAllPatients`, {
+                method: 'GET',
+                mode: 'no-cors'
+            })
+                .then(response => {
+                    log(`Nhận được phản hồi với status: ${response.type}`);
+                    log("Lưu ý: Khi sử dụng mode 'no-cors', bạn không thể đọc nội dung phản hồi");
+                })
+                .catch(error => {
+                    log(`Lỗi: ${error.message}`, true);
+                });
+        });
+        
+        // Phương thức 3: JSONP
+        document.getElementById('btnJsonp').addEventListener('click', function() {
+            clearOutput();
+            log("Đang gọi API với JSONP...");
+            
+            // Tạo callback function name động
+            const callbackName = 'jsonpCallback' + Date.now();
+            
+            // Tạo global callback function
+            window[callbackName] = function(data) {
+                log(`Đã nhận được dữ liệu từ JSONP callback`);
+                log(`Dữ liệu: ${JSON.stringify(data, null, 2)}`);
+                
+                // Dọn dẹp
+                delete window[callbackName];
+                document.body.removeChild(script);
+            };
+            
+            // Tạo script element
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=getAllPatients&callback=${callbackName}`;
+            script.onerror = function() {
+                log("Lỗi tải script JSONP", true);
+                delete window[callbackName];
+            };
+            
+            document.body.appendChild(script);
+            
+            log("Script JSONP đã được thêm vào DOM");
+        });
+        
+        // Phương thức 4: CORS Proxy
+        document.getElementById('btnProxy').addEventListener('click', function() {
+            clearOutput();
+            log("Đang gọi API thông qua CORS Proxy...");
+            
+            const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(API_URL)}?action=getAllPatients`;
+            
+            fetch(PROXY_URL)
+                .then(response => {
+                    log(`Nhận được phản hồi với status: ${response.status} ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    log(`Dữ liệu nhận được: ${JSON.stringify(data, null, 2)}`);
+                })
+                .catch(error => {
+                    log(`Lỗi: ${error.message}`, true);
+                });
+        });
+        
+        // Ghi chú khi trang tải
+        window.onload = function() {
+            log("Trang đã tải. Nhấn các nút để kiểm tra các phương pháp khác nhau.");
+        };
+    </script>
+</body>
+</html>
