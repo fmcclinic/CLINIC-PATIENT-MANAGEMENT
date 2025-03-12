@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Bệnh nhân - Phòng khám</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #3a87ad;
+            color: white;
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .required-field::after {
+            content: " *";
+            color: red;
+        }
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .patient-info {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .badge-status {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading spinner -->
+    <div id="loading" style="display: none;">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-3">
+                <h3 class="text-center mb-4">Phòng khám</h3>
+                <div class="d-flex flex-column mb-3">
+                    <div class="text-center mb-3">
+                        <img src="https://via.placeholder.com/80" class="rounded-circle" alt="User">
+                        <div class="mt-2">Dr. Nguyễn Văn A</div>
+                        <div class="small">Quản trị viên</div>
+                    </div>
+                </div>
+                <hr>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="bi bi-people me-2"></i>Bệnh nhân</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-calendar-check me-2"></i>Lịch hẹn</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-file-earmark-text me-2"></i>Hồ sơ bệnh án</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-capsule me-2"></i>Kê toa thuốc</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-flask me-2"></i>Xét nghiệm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-image me-2"></i>Chẩn đoán hình ảnh</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-cash-stack me-2"></i>Thanh toán</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-box-seam me-2"></i>Kho thuốc</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-people-fill me-2"></i>Nhân viên</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-bar-chart me-2"></i>Báo cáo</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Main content -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-people me-2"></i>Quản lý Bệnh nhân</h2>
+                    <div>
+                        <button class="btn btn-primary" id="btnAddPatient">
+                            <i class="bi bi-plus-circle me-2"></i>Thêm bệnh nhân mới
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm bệnh nhân theo tên, mã, SĐT...">
+                                    <button class="btn btn-outline-primary" id="btnSearch">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="all">Tất cả trạng thái</option>
+                                    <option value="active">Đang hoạt động</option>
+                                    <option value="inactive">Không hoạt động</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-secondary w-100" id="btnAdvancedFilter">
+                                    <i class="bi bi-funnel me-2"></i>Lọc nâng cao
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3" id="patientTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab" aria-controls="list" aria-selected="true">
+                            Danh sách bệnh nhân
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button" role="tab" aria-controls="add" aria-selected="false">
+                            Thêm bệnh nhân
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="view-tab" data-bs-toggle="tab" data-bs-target="#view" type="button" role="tab" aria-controls="view" aria-selected="false">
+                            Xem chi tiết
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="patientTabsContent">
+                    <!-- Patient List Tab -->
+                    <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Mã BN</th>
+                                                <th>Họ và tên</th>
+                                                <th>Ngày sinh</th>
+                                                <th>Giới tính</th>
+                                                <th>Số điện thoại</th>
+                                                <th>Email</th>
+                                                <th>Trạng thái</th>
+                                                <th>Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="patientTableBody">
+                                            <!-- Patient data will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination justify-content-center" id="pagination">
+                                        <!-- Pagination will be generated here -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Patient Tab -->
+                    <div class="tab-pane fade" id="add" role="tabpanel" aria-labelledby="add-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <form id="addPatientForm">
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <h4>Thông tin cá nhân</h4>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label for="firstName" class="form-label required-field">Tên</label>
+                                            <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="lastName" class="form-label required-field">Họ</label>
+                                            <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="gender" class="form-label required-field">Giới tính</label>
+                                            <select class="form-select" id="gender" name="gender" required>
+                                                <option value="">-- Chọn giới tính --</option>
+                                                <option value="Nam">Nam</option>
+                                                <option value="Nữ">Nữ</option>
+                                                <option value="Khác">Khác</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label for="dateOfBirth" class="form-label required-field">Ngày sinh</label>
+                                            <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="idNumber" class="form-label required-field">CMND/CCCD</label>
+                                            <input type="text" class="form-control" id="idNumber" name="idNumber" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="bloodType" class="form-label">Nhóm máu</label>
+                                            <select class="form-select" id="bloodType" name="bloodType">
+                                                <option value="">-- Chọn nhóm máu --</option>
+                                                <option value="A+">A+</option>
+                                                <option value="A-">A-</option>
+                                                <option value="B+">B+</option>
+                                                <option value="B-">B-</option>
+                                                <option value="AB+">AB+</option>
+                                                <option value="AB-">AB-</option>
+                                                <option value="O+">O+</option>
+                                                <option value="O-">O-</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <h4>Thông tin liên hệ</h4>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label for="phone" class="form-label required-field">Số điện thoại</label>
+                                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" name="email">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="address" class="form-label">Địa chỉ</label>
+                                            <input type="text" class="form-control" id="address" name="address">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="emergencyContactName" class="form-label">Người liên hệ khẩn cấp</label>
+                                            <input type="text" class="form-control" id="emergencyContactName" name="emergencyContactName">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="emergencyContactPhone" class="form-label">SĐT liên hệ khẩn cấp</label>
+                                            <input type="tel" class="form-control" id="emergencyContactPhone" name="emergencyContactPhone">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <h4>Thông tin y tế</h4>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="allergies" class="form-label">Dị ứng</label>
+                                            <textarea class="form-control" id="allergies" name="allergies" rows="2" placeholder="Nhập các loại dị ứng, phân cách bằng dấu phẩy"></textarea>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="medicalHistory" class="form-label">Tiền sử bệnh</label>
+                                            <textarea class="form-control" id="medicalHistory" name="medicalHistory" rows="2" placeholder="Nhập tiền sử bệnh, phân cách bằng dấu phẩy"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="insuranceProvider" class="form-label">Nhà cung cấp bảo hiểm</label>
+                                            <input type="text" class="form-control" id="insuranceProvider" name="insuranceProvider">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="insuranceId" class="form-label">Mã bảo hiểm</label>
+                                            <input type="text" class="form-control" id="insuranceId" name="insuranceId">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12 text-end">
+                                            <button type="button" class="btn btn-secondary me-2" id="btnResetForm">Xóa thông tin</button>
+                                            <button type="submit" class="btn btn-primary">Lưu bệnh nhân</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View Patient Tab -->
+                    <div class="tab-pane fade" id="view" role="tabpanel" aria-labelledby="view-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="patientDetail">
+                                    <!-- Patient details will be displayed here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for confirmation -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel">Xác nhận</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="confirmMessage">
+                    Bạn có chắc chắn muốn thực hiện hành động này?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="confirmAction">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="patient.js"></script>
+</body>
+</html>
