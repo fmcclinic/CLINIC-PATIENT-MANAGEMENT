@@ -1,8 +1,8 @@
 // Constants
 const SHEET_NAME = 'Patients';
 const ITEMS_PER_PAGE = 10;
-const API_URL_ORIGINAL = "https://script.google.com/macros/s/AKfycbx-TQojT-M16MZy50zy1lZzU5_QPPV1rilGM6DeH1r39FmWxHJJGr-RlpB2r-4ZMaKI/exec";
-const API_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(API_URL_ORIGINAL)}`;
+const API_URL = "https://script.google.com/macros/s/AKfycbx-TQojT-M16MZy50zy1lZzU5_QPPV1rilGM6DeH1r39FmWxHJJGr-RlpB2r-4ZMaKI/exec";
+
 // Global variables
 let allPatients = [];
 let currentPage = 1;
